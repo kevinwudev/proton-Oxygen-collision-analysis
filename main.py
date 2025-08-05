@@ -18,7 +18,7 @@ if __name__ == "__main__":
         DpmjetIII193 # 1.37 min for 40K events ,  21868 candidates of 100 events
         ]
     
-    gevt = 35000
+    gevt = 100
 
     print("🚀 開始執行物理模型模擬...")
     for model in models:
