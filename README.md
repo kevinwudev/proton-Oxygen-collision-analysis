@@ -26,6 +26,6 @@ You can analyse the generated data by running:
 uv run main.py -a eta # for pseudorapidity analysis
 ```
 
-
+You would see pdf files generated in the `figure` folder.
 
 
