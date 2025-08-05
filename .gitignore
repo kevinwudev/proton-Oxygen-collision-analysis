@@ -15,4 +15,4 @@ dist/
 *.sqlite
 *.zip
 uv.lock
-
+.pdf

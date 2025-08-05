@@ -5,7 +5,9 @@ description = "Just a practice demo for Sinica internship."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "argparse>=1.4.0",
     "chromo>=0.9.0",
+    "matplotlib>=3.10.5",
     "numpy>=2.3.2",
     "packaging>=25.0",
     "polars>=1.32.0",

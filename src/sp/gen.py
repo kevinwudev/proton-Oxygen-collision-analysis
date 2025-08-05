@@ -126,11 +126,9 @@ def run_model(kin_list   : list [CenterOfMass, str] = [CenterOfMass(5 * TeV, "p"
     print(df)
 
     try:
-        # 使用 pathlib 構建路徑並確保目錄存在
         output_path = Path(root_base) / "pq" / f"{kin_list[1]}_{gen.label}_{gevt}.parquet"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 寫入 parquet 檔案
         df.write_parquet(output_path)
         print(f'File saved to: {output_path}')
         
