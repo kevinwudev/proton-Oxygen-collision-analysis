@@ -1,7 +1,9 @@
 # Simple demo for Sinica Practice
-
-When clone the repo to ur current working dir, let first set up some required package.
-## Usage
+This demo shows how to generate and analyse data using different physics models.
+It uses the `uv` package to manage dependencies and run scripts.
+# Usage Guide
+When clone the repo to ur current working dir, let first set up some required packages.
+## 0. Set up packages
 
 ```bash
 uv lock
