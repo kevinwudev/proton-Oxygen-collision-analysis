@@ -10,8 +10,10 @@ from sp.gen import run_model
 from sp.analyse import load_parquet_by_prefix_and_model, main
 
 kins = [
-        [CenterOfMass(5 * TeV, "p", (16, 8)), 'pO'],
         [CenterOfMass(5 * TeV, "p", "p"), 'pp'],
+        [CenterOfMass(5 * TeV, "p", (16, 8)), 'pO'],
+        [CenterOfMass(5 * TeV, (16, 8), "p"), 'Op'],
+        [CenterOfMass(5 * TeV, (16, 8), (16, 8)), 'OO'],
     ]
 
 models = [
@@ -84,10 +86,15 @@ def analyse(var):
 if __name__ == "__main__":
     args = parse()
     
-    if args.gen == "pO":
-        gen(0)
     if args.gen == "pp":
+        gen(0)
+    if args.gen == "pO":
         gen(1)
+    if args.gen == "Op":
+        gen(2)
+    if args.gen == "OO":
+        gen(3)
+
     if args.analyse:
         analyse(args.analyse)
 

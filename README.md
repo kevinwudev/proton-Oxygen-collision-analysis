@@ -9,13 +9,23 @@ uv lock
 ```bash
 uv sync
 ```
-## Try generate some data
+## 1. Try generate some data
 Modify the `main.py` file by changing the `kins`, `models`, `gevt` variables for data generation, or directly run the `main.py` file with:
 
 ```bash
-uv run main
+uv run main.py -g pp # for pp generation
+uv run main.py -g pO # for pO generation
+uv run main.py -g Op # for Op generation
+uv run main.py -g OO # for OO generation
 ```
-You would see some data generated in the `pq` folder.
+You would see parquet files generated in the `pq` folder.
+
+## 2. Analyse the generated data
+You can analyse the generated data by running:
+```bash
+uv run main.py -a eta # for pseudorapidity analysis
+```
+
 
 
 
