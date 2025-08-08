@@ -50,8 +50,16 @@ def plot_with_ratio(gs,
     ref_model_name : str          = "EPOS-LHC-R"
     ref_model      : pl.DataFrame = df_dict[ref_model_name].filter(pl.col('pid') == pid) if pid else df_dict[ref_model_name]
     ref_model , _                 = adjust(ref_model)
-    ref_model_data : np.array     = ref_model[col_name]
+    ref_model_data : np.array     = ref_model[col_name].to_numpy()
     print(f"ref model: {ref_model_name}, data size {len(ref_model_data)}")
+
+    # If range is not provided, calculate it as mean +/- 3*std of the reference data
+    if range is None:
+        mean = np.mean(ref_model_data)
+        std = np.std(ref_model_data)
+        range = (mean - 3 * std, mean + 3 * std)
+        print(f"Range not provided. Calculated range based on reference model: {range}")
+
     
     # set up parameter for histogram
     weights = 1 / ref_model['n_wounded'] if 'n_wounded' in ref_model.columns else np.ones(len(df))

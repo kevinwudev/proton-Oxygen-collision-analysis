@@ -19,11 +19,13 @@ kins = [
 models = [
     EposLHCR,  
     QGSJetIII, 
-    # Sibyll23e    # Sibyll23e is currently not used in the main.py since the wounded candidates issue.
+    # Sibyll23e    # Sibyll23e is currently not used in the main.py due to wounded candidates issue.
     DpmjetIII193
     ]
 
 gevt = 10
+
+variables = ["pid", "eta", "charge", "n_wounded", "xf", "xlab"]
 
 def parse():
 
@@ -37,7 +39,11 @@ def parse():
 def gen(label):
     print("🚀 Start simulation...")
     for model in models:
-        run_model(kin_list=kins[label], model=model, gevt=gevt)
+        run_model(kin_list=kins[label], 
+                  model=model, 
+                  gevt=gevt, 
+                  variables=variables
+                  )
 
 def analyse(var):
     # 繪圖規格定義 - 新增 y 軸範圍設定
@@ -46,7 +52,15 @@ def analyse(var):
     col_name = var
     main_ylim = None
     ratio_ylim = (0.0, 1.5)
-    range = (-10, 10)
+    if var == "eta":
+        range = (-10, 10)
+    elif var == "xf":
+        range = (-0.02, 0.02)
+    elif var == "xlab":
+        range = (-0.001, 0.005)
+    else:
+        range = None
+
     x_label = "var"
     y_label = "Candidates"
     

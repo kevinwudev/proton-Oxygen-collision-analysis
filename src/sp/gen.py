@@ -2,7 +2,7 @@ import chromo
 import numpy as np
 from chromo.kinematics import CenterOfMass
 from chromo.models import EposLHCR
-from chromo.constants import TeV, MeV
+from chromo.constants import TeV
 from pathlib import Path
 
 from sp import root_base
@@ -10,118 +10,110 @@ from sp import root_base
 def run_model(kin_list   : list [CenterOfMass, str] = [CenterOfMass(5 * TeV, "p", (16, 8)), "pO"],
               model : chromo.models = EposLHCR,
               gevt  : int = 100,
+              variables: list[str] = ["pid", "eta", "charge", "n_wounded", "xf", "xlab"]
               ):
     import polars as pl
     import numpy as np
     import time
 
-    # Single-process batch optimized version
+    """單進程批次優化版本 - 支援動態變量選擇"""
     
-    # Initialize generator once
+    # 初始化一次生成器
     kin = kin_list[0]
     gen = model(kin)
     gen.set_stable(111) 
     
     total_events = gevt
-    batch_size = total_events / 40  # Larger batch size for better performance
+    batch_size = total_events / 40 # 較大的批次提高效率
     
-    # Pre-allocate result containers
-    all_pid_chunks = []
-    all_charged_chunks = []
-    all_eta_chunks = []
-    all_mass_chunks = []
-    all_n_wounded_chunks = []
-
+    # 動態初始化變量容器
+    all_chunks = {var: [] for var in variables}
+    current_batch = {var: [] for var in variables}
+    
+    # 數據類型映射 - 根據常見屬性推斷
+    dtype_mapping = {
+        'pid': np.int32,
+        'charge': np.int32, 
+        'eta': np.float32,
+        'm': np.float32,
+        'n_wounded': np.int32
+    }
+    
+    def get_dtype(var_name):
+        """自動推斷數據類型"""
+        if var_name in dtype_mapping:
+            return dtype_mapping[var_name]
+        # 默認推斷邏輯
+        if var_name.endswith('_id') or var_name == 'pid' or 'charge' in var_name:
+            return np.int32
+        return np.float32  # 物理量通常是浮點數
+    
     events_processed = 0
-    current_batch_pids = []
-    current_batch_charged = []
-    current_batch_eta = []
-    current_batch_mass = []
-    current_batch_n_wounded = []
     
-    print(f"Start processing {total_events:,} events...")
+    print(f"開始處理 {total_events:,} 個事件...")
+    print(f"收集變量: {variables}")
     
     start_time = time.time()
     for i, event in enumerate(gen(total_events)):
-        # Process each event
+        # 處理事件
         f = event.final_state()
-
         n_candidates = f.pid.size
-        n_wounded = f.n_wounded[1]
-        wounded_array = np.full(n_candidates, n_wounded)
-
-        current_batch_pids.extend(f.pid)
-        current_batch_eta.extend(f.eta)
-        current_batch_charged.extend(f.charge)
-        current_batch_mass.extend(f.m)
-        current_batch_n_wounded.extend(wounded_array)
+        
+        # 動態收集指定變量
+        for var in variables:
+            if var == "n_wounded":
+                # 特殊處理 n_wounded
+                n_wounded = f.n_wounded[1]
+                wounded_array = np.full(n_candidates, n_wounded)
+                current_batch[var].extend(wounded_array)
+            else:
+                # 一般屬性直接獲取
+                attr_value = getattr(f, var)
+                current_batch[var].extend(attr_value)
+        
         events_processed += 1
         
-        # Process current batch
+        # 批次處理完成
         if events_processed % batch_size == 0:
-            # Convert to numpy arrays for performance
-            pid_chunk = np.array(current_batch_pids, dtype=np.int32)
-            eta_chunk = np.array(current_batch_eta, dtype=np.float32)
-            charged_chunk = np.array(current_batch_charged, dtype=np.int32)
-            mass_chunk = np.array(current_batch_mass, dtype=np.float32)
-            n_wounded_chunk  = np.array(current_batch_n_wounded, dtype=np.int32)
-
-            all_pid_chunks.append(pid_chunk)
-            all_eta_chunks.append(eta_chunk)
-            all_charged_chunks.append(charged_chunk)    
-            all_mass_chunks.append(mass_chunk)
-            all_n_wounded_chunks.append(n_wounded_chunk)
-
-            current_batch_pids = []  # Clear current batch
-            current_batch_eta = []
-            current_batch_charged = []
-            current_batch_mass = []
-            current_batch_n_wounded = []
+            # 將當前批次轉換為 numpy array 並加入總容器
+            for var in variables:
+                dtype = get_dtype(var)
+                chunk = np.array(current_batch[var], dtype=dtype)
+                all_chunks[var].append(chunk)
+                current_batch[var] = []  # 清空當前批次
             
-            # Progress report
+            # 進度報告
             elapsed = time.time() - start_time
             rate = events_processed / elapsed
             eta = (total_events - events_processed) / rate
-            print(f"Processed: {events_processed:,}/{total_events:,} "
+            print(f"已處理: {events_processed:,}/{total_events:,} "
                 f"({events_processed/total_events*100:.1f}%) "
-                f"Rate: {rate:.0f} events/s, ETA: {eta/60:.1f}min")
+                f"速率: {rate:.0f} events/s, ETA: {eta/60:.1f}min")
     
-    # Handle remaining events
-    if current_batch_pids:
-        pid_chunk = np.array(current_batch_pids, dtype=np.int32)
-        all_pid_chunks.append(pid_chunk)
+    # 處理剩餘事件
+    for var in variables:
+        if current_batch[var]:
+            dtype = get_dtype(var)
+            chunk = np.array(current_batch[var], dtype=dtype)
+            all_chunks[var].append(chunk)
     
-    if current_batch_eta:
-        eta_chunk = np.array(current_batch_eta, dtype=np.float32)
-        all_eta_chunks.append(eta_chunk)
+    # 高效合併所有chunks
+    print("合併結果...")
+    final_data = {}
+    for var in variables:
+        if all_chunks[var]:
+            final_data[var] = np.concatenate(all_chunks[var])
+        else:
+            dtype = get_dtype(var)
+            final_data[var] = np.array([], dtype=dtype)
     
-    if current_batch_charged:
-        charged_chunk = np.array(current_batch_charged, dtype=np.int32)
-        all_charged_chunks.append(charged_chunk)
-    
-    if current_batch_mass:
-        mass_chunk = np.array(current_batch_mass, dtype=np.float32)
-        all_mass_chunks.append(mass_chunk)
-
-    if current_batch_n_wounded:
-        n_wounded_chunk = np.array(current_batch_n_wounded, dtype=np.int32)
-        all_n_wounded_chunks.append(n_wounded_chunk)
-
-    # Efficiently concatenate all chunks
-    print("Merging results...")
-    all_pids = np.concatenate(all_pid_chunks) if all_pid_chunks else np.array([], dtype=np.int32)
-    all_eta = np.concatenate(all_eta_chunks) if all_eta_chunks else np.array([], dtype=np.float32)
-    all_charged = np.concatenate(all_charged_chunks) if all_charged_chunks else np.array([], dtype=np.int32)
-    all_mass = np.concatenate(all_mass_chunks) if all_mass_chunks else np.array([], dtype=np.float32)
-    all_n_wounded = np.concatenate(all_n_wounded_chunks) if all_n_wounded_chunks else np.array([], dtype=np.int32)
-    
-    # Create Polars DataFrame
-    df = pl.DataFrame({"pid": all_pids, "eta": all_eta, "charged": all_charged, "mass": all_mass, "n_wounded": all_n_wounded})
+    # 創建 DataFrame
+    df = pl.DataFrame(final_data)
     
     total_time = time.time() - start_time
-    print(f"Total processing time: {total_time/60:.2f} minutes")
-    print(f"Average rate: {total_events/total_time:.0f} events/s")
-    print(f"Total particles generated: {len(df):,}")
+    print(f"總處理時間: {total_time/60:.2f} 分鐘")
+    print(f"平均速率: {total_events/total_time:.0f} events/s")
+    print(f"生成粒子數: {len(df):,}")
     print(df.shape)
     print(df)
 
