@@ -131,7 +131,7 @@ def main(plot_specs : list[PlotSpec],
     nrows = len(plot_specs) // ncols
     
     fig = plt.figure(figsize=(5 * ncols, 4.6 * nrows), dpi=120)
-    fig.suptitle(f"Pseudorapidity Distribution Comparison, generated in {gevt} events",
+    fig.suptitle(f"{output_path_name} Distribution Comparison, generated in {gevt} events",
                 fontsize=16, fontweight='bold')
     
     print("🎨 Start plotting figure...")
