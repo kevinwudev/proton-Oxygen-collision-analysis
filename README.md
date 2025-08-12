@@ -25,9 +25,9 @@ You would see parquet files generated in the `pq` folder.
 ## 2. Analyse the generated data
 You can analyse the generated data by running:
 ```bash
-uv run main.py -a eta # for pseudorapidity analysis
+uv run main.py -a <output_path_name>
 ```
 
-You would see pdf files generated in the `figure` folder.
+You would see <output_path_name>.pdf files generated in the `figure` folder.
 
 

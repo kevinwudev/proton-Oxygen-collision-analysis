@@ -40,7 +40,9 @@ def plot_with_ratio(gs,
                     main_ylim : tuple[float, float] = None, 
                     ratio_ylim: tuple[float, float] = (0.5, 2.0),
                     bins      : int = 50,
-                    range     : tuple[float, float] = None):
+                    range     : tuple[float, float] = None,
+                    gevt      : int = 10,
+                    ignore_wo : bool = False):
     
     # 5 : 1
     ax_main = fig.add_subplot(gs[0])   # 5/6
@@ -60,18 +62,30 @@ def plot_with_ratio(gs,
         range = (mean - 3 * std, mean + 3 * std)
         print(f"Range not provided. Calculated range based on reference model: {range}")
 
-    
+    # set up the weights of reference data (EPOS) for histogram plot.
+    if ignore_wo:
+        weights = np.ones(len(ref_model)) / gevt
+    else:
+        weights = 1 / (ref_model['n_wounded'] * gevt) if 'n_wounded' in ref_model.columns else np.ones(len(ref_model)) / gevt
+
     # set up parameter for histogram
-    weights = 1 / ref_model['n_wounded'] if 'n_wounded' in ref_model.columns else np.ones(len(df))
     ref_counts, ref_bin_edges = np.histogram(ref_model_data, bins=bins, range=range, weights=weights)
+    bin_width = ref_bin_edges[1] - ref_bin_edges[0]
+    ref_counts_density = ref_counts / bin_width
     
     for i, (model, df) in enumerate(df_dict.items()):
         df, remove_info = adjust(df)
         df = df.filter(pl.col('pid') == pid) if pid else df
         print(f' {model=} require {pid=} ') if pid else None
         
-        data = df[col_name] 
-        weights = 1 / df['n_wounded'] if 'n_wounded' in df.columns else np.ones(len(df))
+        data = df[col_name]
+
+        # set up the weights of current data for histogram plot.
+        if ignore_wo:
+            weights = np.ones(len(df)) / gevt
+        else:
+            weights = 1 / (df['n_wounded'] * gevt) if 'n_wounded' in df.columns else np.ones(len(df)) / gevt
+
         print(f"{model=} | {df.shape=}", 
               f"remove eta -inf, set n_wounded >=0", 
               f"{remove_info}" if remove_info else ""
@@ -79,13 +93,14 @@ def plot_with_ratio(gs,
         
         # main - histogram
         current_counts, bin_edges = np.histogram(data, bins=bins, range=range, weights=weights)
-        ax_main.stairs(current_counts, bin_edges, 
-                    label=model, alpha=0.7, linewidth=1.5)
+        current_counts_density = current_counts / bin_width
+        ax_main.stairs(current_counts_density, bin_edges, 
+                       label=model, alpha=0.7, linewidth=1.5)
         
         # ratio - avoid divide by zero
-        ratio = np.divide(current_counts, ref_counts, 
-                         out=np.ones_like(current_counts, dtype=float), 
-                         where=ref_counts!=0)
+        ratio = np.divide(current_counts_density, ref_counts_density, 
+                         out=np.ones_like(current_counts_density, dtype=float), 
+                         where=ref_counts_density!=0)
         
         bin_centers = (ref_bin_edges[:-1] + ref_bin_edges[1:]) / 2
         
@@ -121,17 +136,18 @@ def plot_with_ratio(gs,
     
     return ax_main, ax_ratio
 
-def main(plot_specs : list[PlotSpec], 
+def plot_all_plot(plot_specs : list[PlotSpec], 
          gevt : int,
          output_path_name : str,
+         title : str
          ):
 
     
-    ncols = 4
+    ncols = 2
     nrows = len(plot_specs) // ncols
     
     fig = plt.figure(figsize=(5 * ncols, 4.6 * nrows), dpi=120)
-    fig.suptitle(f"{output_path_name} Distribution Comparison, generated in {gevt} events",
+    fig.suptitle(f"{title}, generated in {gevt} events",
                 fontsize=16, fontweight='bold')
     
     print("🎨 Start plotting figure...")
@@ -160,7 +176,8 @@ def main(plot_specs : list[PlotSpec],
             plot_with_ratio(gs_subplot, fig, spec.df_dict, 
                               col_name=spec.col_name, title=spec.title, pid = spec.pid,
                               main_ylim=spec.main_ylim, ratio_ylim=spec.ratio_ylim,
-                              range=spec.range, x_label=spec.x_label, y_label=spec.y_label)
+                              range=spec.range, x_label=spec.x_label, y_label=spec.y_label,
+                              gevt = gevt)
         except Exception as e:
             print(f"⚠️  error when plotting subfigure {idx}: {e}")
             continue

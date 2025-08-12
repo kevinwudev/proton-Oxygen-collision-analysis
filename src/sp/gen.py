@@ -7,7 +7,7 @@ from pathlib import Path
 
 from sp import root_base
 
-def run_model(kin_list   : list [CenterOfMass, str] = [CenterOfMass(5 * TeV, "p", (16, 8)), "pO"],
+def run_model(kin_list   : list [CenterOfMass, str] = [CenterOfMass(9.9 * TeV, "p", (16, 8)), "pO"],
               model : chromo.models = EposLHCR,
               gevt  : int = 100,
               variables: list[str] = ["pid", "eta", "charge", "n_wounded", "xf", "xlab"]
