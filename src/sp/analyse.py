@@ -42,7 +42,9 @@ def plot_with_ratio(gs,
                     bins      : int = 50,
                     range     : tuple[float, float] = None,
                     gevt      : int = 10,
-                    ignore_wo : bool = False):
+                    islog     : bool = False,
+                    ignore_wo : bool = False,
+                    ):
     
     # 5 : 1
     ax_main = fig.add_subplot(gs[0])   # 5/6
@@ -68,10 +70,19 @@ def plot_with_ratio(gs,
     else:
         weights = 1 / (ref_model['n_wounded'] * gevt) if 'n_wounded' in ref_model.columns else np.ones(len(ref_model)) / gevt
 
-    # set up parameter for histogram
-    ref_counts, ref_bin_edges = np.histogram(ref_model_data, bins=bins, range=range, weights=weights)
-    bin_width = ref_bin_edges[1] - ref_bin_edges[0]
+    # set up log parameter for histogram
+    if islog:
+        bin_edges = np.logspace(-5, 1, 100)
+        ref_counts, ref_bin_edges = np.histogram(ref_model_data, bins=bin_edges, range=range, weights=weights)
+        bin_centers = 0.5 * (ref_bin_edges[:-1] + ref_bin_edges[1:]) # 計算 bin 中心位置
+        bin_width = np.diff(ref_bin_edges) # 計算 bin 寬度
+
+    else:
+        ref_counts, ref_bin_edges = np.histogram(ref_model_data, bins=bins, range=range, weights=weights)
+        bin_width = ref_bin_edges[1] - ref_bin_edges[0]
+    
     ref_counts_density = ref_counts / bin_width
+
     
     for i, (model, df) in enumerate(df_dict.items()):
         df, remove_info = adjust(df)
@@ -92,7 +103,16 @@ def plot_with_ratio(gs,
               )
         
         # main - histogram
-        current_counts, bin_edges = np.histogram(data, bins=bins, range=range, weights=weights)
+        if islog:
+            log_bin_edges = np.logspace(-5, 1, 100)
+            current_counts, bin_edges = np.histogram(data, bins=log_bin_edges, range=range, weights=weights)
+            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:]) # 計算 bin 中心位置
+            bin_width = np.diff(bin_edges) # 計算 bin 寬度
+        else:
+            current_counts, bin_edges = np.histogram(data, bins=bins, range=range, weights=weights)
+            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:]) # 計算 bin 中心位置
+            bin_width = bin_edges[1] - bin_edges[0] # 計算 bin 寬度
+
         current_counts_density = current_counts / bin_width
         ax_main.stairs(current_counts_density, bin_edges, 
                        label=model, alpha=0.7, linewidth=1.5)
@@ -101,8 +121,6 @@ def plot_with_ratio(gs,
         ratio = np.divide(current_counts_density, ref_counts_density, 
                          out=np.ones_like(current_counts_density, dtype=float), 
                          where=ref_counts_density!=0)
-        
-        bin_centers = (ref_bin_edges[:-1] + ref_bin_edges[1:]) / 2
         
         # subplot - plot
         ax_ratio.plot(bin_centers, ratio, drawstyle='steps-mid', linewidth=1.2)
@@ -139,7 +157,7 @@ def plot_with_ratio(gs,
 def plot_all_plot(plot_specs : list[PlotSpec], 
          gevt : int,
          output_path_name : str,
-         title : str
+         title : str,
          ):
 
     
@@ -177,7 +195,7 @@ def plot_all_plot(plot_specs : list[PlotSpec],
                               col_name=spec.col_name, title=spec.title, pid = spec.pid,
                               main_ylim=spec.main_ylim, ratio_ylim=spec.ratio_ylim,
                               range=spec.range, x_label=spec.x_label, y_label=spec.y_label,
-                              gevt = gevt)
+                              gevt = gevt, islog = spec.islog, ignore_wo = spec.ignore_wo)
         except Exception as e:
             print(f"⚠️  error when plotting subfigure {idx}: {e}")
             continue
