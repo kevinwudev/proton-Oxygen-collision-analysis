@@ -108,15 +108,20 @@ def plot_with_ratio(gs,
             current_counts, bin_edges = np.histogram(data, bins=log_bin_edges, range=range, weights=weights)
             bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:]) # 計算 bin 中心位置
             bin_width = np.diff(bin_edges) # 計算 bin 寬度
+            
         else:
             current_counts, bin_edges = np.histogram(data, bins=bins, range=range, weights=weights)
             bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:]) # 計算 bin 中心位置
             bin_width = bin_edges[1] - bin_edges[0] # 計算 bin 寬度
 
         current_counts_density = current_counts / bin_width
-        ax_main.stairs(current_counts_density, bin_edges, 
-                       label=model, alpha=0.7, linewidth=1.5)
-        
+
+        if not islog:
+            ax_main.stairs(current_counts_density, bin_edges, 
+                        label=model, alpha=0.7, linewidth=1.5)
+        else:
+            ax_main.hist(data, bins=bins, range=range, weights=weights, log=True, density=True, histtype='step')
+
         # ratio - avoid divide by zero
         ratio = np.divide(current_counts_density, ref_counts_density, 
                          out=np.ones_like(current_counts_density, dtype=float), 
@@ -128,6 +133,7 @@ def plot_with_ratio(gs,
     # main plot setting
     ax_main.set_title(title, fontsize=11, pad=15, weight='bold')
     ax_main.set_ylabel(y_label, fontsize=10)
+    ax_main.set_yscale('log') if islog else None
     ax_main.tick_params(axis='x', labelbottom=False)
     ax_main.tick_params(axis='y', labelsize=9)
     ax_main.legend(loc="upper right", fontsize=8, framealpha=0.8)
