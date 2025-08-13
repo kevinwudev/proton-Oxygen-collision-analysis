@@ -37,7 +37,7 @@ def analyse(output_path_name : str,
                                        "x_label", "y_label", "islog", "ignore_wo"])
     
     main_ylim = None
-    ratio_ylim = (0.0, 2.0)
+    ratio_ylim = (0.5, 1.5)
 
     ''' Range setting
     eta : (-10, 10)
@@ -46,25 +46,28 @@ def analyse(output_path_name : str,
     
     '''
     
-    # 定義每個圖的 y 軸範圍（可根據需要調整)
     df_dict : dict[str, dict[str, pl.DataFrame]] = load_parquet_by_prefix_and_model(input_path_name)
 
-    # print(df_dict)
+    print(df_dict)
+
+
     plot_specs = [
         # Charged
         PlotSpec(df_dict['pO'], r"charged : pO", None, "eta", main_ylim, ratio_ylim, (-10, 10), 
                  r"$\eta$", r"$1/N_{ev}dN/d\eta$", False, True),
-        PlotSpec(df_dict['pO'], r"charged : pO", None, "xlab", main_ylim, ratio_ylim, (0, 1), 
+        PlotSpec(df_dict['pO'], r"charged : pO", None, "xlab", main_ylim, ratio_ylim, (0.00001, 1), 
                  r"$x_{lab}$", r"$1/N_{ev}dN/dx_{lab}$", True, True),
 
         # π⁰
-        # PlotSpec(df_dict['pO'], r"$\pi^0$ : pO", int(lp.pi_0.pdgid), col_name, main_ylim, ratio_ylim, range, x_label, y_label),
-        # PlotSpec(df_dict['pO'], r"$\pi^0$ : pO", int(lp.pi_0.pdgid), col_name, main_ylim, ratio_ylim, range, x_label, y_label),
+        PlotSpec(df_dict['pO'], r"$\pi^0$ : pO", int(lp.pi_0.pdgid), "eta", main_ylim, ratio_ylim, (-10, 10), 
+                 r"$\eta$", r"$1/N_{ev}dN/d\eta$", False, True),
+        PlotSpec(df_dict['pO'], r"$\pi^0$ : pO", int(lp.pi_0.pdgid), "xlab", main_ylim, ratio_ylim, (0.00001, 1), 
+                 r"$x_{lab}$", r"$1/N_{ev}dN/dx_{lab}$", True, True),
         
         # π⁺
         PlotSpec(df_dict['pO'], r"$\pi^+$ : pO", int(lp.pi_plus.pdgid), "eta", main_ylim, ratio_ylim, (-10, 10), 
                  r"$\eta$", r"$1/N_{ev}dN/d\eta$", False, True),
-        PlotSpec(df_dict['pO'], r"$\pi^+$ : pO", int(lp.pi_plus.pdgid), "xlab", main_ylim, ratio_ylim, (0, 1), 
+        PlotSpec(df_dict['pO'], r"$\pi^+$ : pO", int(lp.pi_plus.pdgid), "xlab", main_ylim, ratio_ylim, (0.00001, 1), 
                  r"$x_{lab}$", r"$1/N_{ev}dN/dx_{lab}$", True, True),
         
         # π⁻
@@ -74,7 +77,7 @@ def analyse(output_path_name : str,
         # K⁺
         PlotSpec(df_dict['pO'], r"$K^+$ : pO", int(lp.K_plus.pdgid), "eta", main_ylim, ratio_ylim, (-10, 10), 
                  r"$\eta$", r"$1/N_{ev}dN/d\eta$", False, True),
-        PlotSpec(df_dict['pO'], r"$K^+$ : pO", int(lp.K_plus.pdgid), "xlab", main_ylim, ratio_ylim, (0, 1), 
+        PlotSpec(df_dict['pO'], r"$K^+$ : pO", int(lp.K_plus.pdgid), "xlab", main_ylim, ratio_ylim, (0.00001, 1), 
                  r"$x_{lab}$", r"$1/N_{ev}dN/dx_{lab}$", True, True),
         
         # K⁻

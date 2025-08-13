@@ -116,11 +116,9 @@ def plot_with_ratio(gs,
 
         current_counts_density = current_counts / bin_width
 
-        if not islog:
-            ax_main.stairs(current_counts_density, bin_edges, 
-                        label=model, alpha=0.7, linewidth=1.5)
-        else:
-            ax_main.hist(data, bins=bins, range=range, weights=weights, log=True, density=True, histtype='step')
+        # main plot
+        ax_main.stairs(current_counts_density, bin_edges, 
+                       label=model, alpha=0.7, linewidth=1.5)
 
         # ratio - avoid divide by zero
         ratio = np.divide(current_counts_density, ref_counts_density, 
@@ -128,11 +126,13 @@ def plot_with_ratio(gs,
                          where=ref_counts_density!=0)
         
         # subplot - plot
-        ax_ratio.plot(bin_centers, ratio, drawstyle='steps-mid', linewidth=1.2)
+        # ax_ratio.plot(bin_centers, ratio, drawstyle='steps-mid', linewidth=1.2)
+        ax_ratio.stairs(ratio, bin_edges, linewidth=1.2)
     
     # main plot setting
     ax_main.set_title(title, fontsize=11, pad=15, weight='bold')
     ax_main.set_ylabel(y_label, fontsize=10)
+    ax_main.set_xscale('log') if islog else None
     ax_main.set_yscale('log') if islog else None
     ax_main.tick_params(axis='x', labelbottom=False)
     ax_main.tick_params(axis='y', labelsize=9)
@@ -151,6 +151,7 @@ def plot_with_ratio(gs,
     ax_ratio.set_xlabel(x_label, fontsize=10)
     ax_ratio.set_xlim(range[0], range[1])
     ax_ratio.set_ylim(ratio_ylim)
+    ax_ratio.set_xscale('log') if islog else None
     ax_ratio.tick_params(labelsize=9)
     ax_ratio.grid(True, linestyle=":", alpha=0.4)
     ax_ratio.axhline(y=1, color='black', linestyle='-', alpha=0.3, linewidth=0.8)
@@ -170,7 +171,7 @@ def plot_all_plot(plot_specs : list[PlotSpec],
     ncols = 2
     nrows = len(plot_specs) // ncols
     
-    fig = plt.figure(figsize=(5 * ncols, 4.6 * nrows), dpi=120)
+    fig = plt.figure(figsize=(5 * ncols, 4.6 * nrows), dpi=200)
     fig.suptitle(f"{title}, generated in {gevt} events",
                 fontsize=16, fontweight='bold')
     
