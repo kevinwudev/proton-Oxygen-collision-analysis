@@ -11,9 +11,11 @@ poster/
 *.log
 *.csv
 *.txt
+*.pdf
 *.h5
 *.db
 *.sqlite
 *.zip
 uv.lock
-.pdf
+
+check.py
