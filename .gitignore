@@ -1,6 +1,7 @@
 __pycache__/
 .sp/
 dist/
+poster/
 
 .python-version
 *.egg-info/

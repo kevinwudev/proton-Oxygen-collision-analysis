@@ -16,7 +16,9 @@ from collections import defaultdict
 from sp import root_base
 
 def adjust(df):
-    df_update = df.filter(~(pl.col("eta").is_infinite() & (pl.col("eta") < 0)))
+    selection_cut = ((pl.col("pt") > 0.1) & (pl.col("eta").abs() < 10))
+
+    df_update = df.filter(selection_cut)
     df_update = df_update.with_columns(
         pl.when(pl.col("n_wounded") == 0)
         .then(1)
@@ -130,8 +132,8 @@ def plot_with_ratio(gs,
         ax_ratio.stairs(ratio, bin_edges, linewidth=1.2)
     
     # main plot setting
-    ax_main.set_title(title, fontsize=11, pad=15, weight='bold')
-    ax_main.set_ylabel(y_label, fontsize=10)
+    ax_main.set_title(title, fontsize=20, pad=15, weight='bold')
+    ax_main.set_ylabel(y_label, fontsize=15)
     ax_main.set_xscale('log') if islog else None
     ax_main.set_yscale('log') if islog else None
     ax_main.tick_params(axis='x', labelbottom=False)
@@ -147,8 +149,8 @@ def plot_with_ratio(gs,
         ax_main.margins(y=0.1)
     
     # subplot setting
-    ax_ratio.set_ylabel(f"Model/{ref_model_name}", fontsize=9, ha='center')
-    ax_ratio.set_xlabel(x_label, fontsize=10)
+    ax_ratio.set_ylabel(f"Model/{ref_model_name}", fontsize=8, ha='center')
+    ax_ratio.set_xlabel(x_label, fontsize=20)
     ax_ratio.set_xlim(range[0], range[1])
     ax_ratio.set_ylim(ratio_ylim)
     ax_ratio.set_xscale('log') if islog else None
@@ -172,7 +174,7 @@ def plot_all_plot(plot_specs : list[PlotSpec],
     nrows = len(plot_specs) // ncols
     
     fig = plt.figure(figsize=(5 * ncols, 4.6 * nrows), dpi=200)
-    fig.suptitle(f"{title}, generated in {gevt} events",
+    fig.suptitle(f"{title}",
                 fontsize=16, fontweight='bold')
     
     print("🎨 Start plotting figure...")
@@ -189,10 +191,10 @@ def plot_all_plot(plot_specs : list[PlotSpec],
         # 5 : 1
         gs_subplot = gridspec.GridSpec(2, 1, 
                                      figure=fig,
-                                     left=col/ncols + 0.04,     
+                                     left=col/ncols + 0.04,
                                      right=(col+1)/ncols - 0.02,
-                                     bottom=1 - end_row/(nrows*6) + 0.06,  
-                                     top=1 - start_row/(nrows*6) - 0.06,   
+                                     bottom=1 - end_row/(nrows*6) + 0.05,  
+                                     top=1 - start_row/(nrows*6) - 0.05,   
                                      height_ratios=[5, 1],
                                      hspace=0.1)  
         
@@ -209,12 +211,13 @@ def plot_all_plot(plot_specs : list[PlotSpec],
     
     # save
     plt.subplots_adjust(top=0.88, bottom=0.08, left=0.08, right=0.95, 
-                       hspace=0.3, wspace=0.25)  
+                       hspace=0.3, wspace=0.25)
+    fig.tight_layout()
     
     try:
         output_path = Path(root_base) / "figure" / f"{output_path_name}.pdf"
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(str(output_path), dpi=150, bbox_inches='tight',
+        plt.savefig(str(output_path), dpi=200, bbox_inches='tight',
                    facecolor='white', edgecolor='none')
         print(f"✅ save to: {root_base}/figure/{output_path_name}.pdf")
     except Exception as e:

@@ -40,7 +40,7 @@ def analyse(output_path_name : str,
     ratio_ylim = (0.5, 1.5)
 
     ''' Range setting
-    eta : (-10, 10)
+    eta : (2.5, 2.5)
     xf  : (-0.02, 0.02)
     xlab: (0, 1)
     
@@ -101,15 +101,15 @@ if __name__ == "__main__":
     ]
 
     models = [
-        # EposLHCR,
+        EposLHCR,
         QGSJetIII, 
-        Sibyll23e,    # Sibyll23e is currently not used in the main.py due to wounded candidates issue.
+        # Sibyll23e,    # Sibyll23e is currently not used in the main.py due to wounded candidates issue.
         DpmjetIII193
         ]
 
     gevt = 35000
 
-    variables = ["pid", "eta", "charge", "n_wounded", "xf", "xlab"]
+    variables = ["pid", "eta", "charge", "n_wounded", "xf", "xlab", "pt"]
 
     args = parse()
     if args.gen == "pp":
@@ -126,4 +126,4 @@ if __name__ == "__main__":
         input_path_name = "pq/ana"
         analyse(output_path_name, 
                 input_path_name,
-                title = r"$\eta$ and $x_{lab}$ Distribution Comparison")
+                title = "")
